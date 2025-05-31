@@ -1,9 +1,13 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 import os
-from models.email import EmailData
+from app.models.email import EmailData
 from typing import Dict, Union
 from enum import Enum
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class ModelProvider(Enum):
     """Enum for supported model providers"""
@@ -53,10 +57,13 @@ class LangchainService:
     def _initialize_gemini(self):
         """Initialize Gemini LLM"""
         
-        gemini_api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_AI_API_KEY')
+        gemini_api_key = os.getenv('GEMINI_API_KEY')
+        print(f"Debug - GEMINI_API_KEY present: {bool(gemini_api_key)}")
+        print(f"Debug - GEMINI_API_KEY length: {len(gemini_api_key) if gemini_api_key else 0}")
+        
         if not gemini_api_key:
             raise ValueError(
-                "Gemini API key is required. Set GEMINI_API_KEY or GOOGLE_AI_API_KEY environment variable."
+                "Gemini API key is required. Set GEMINI_API_KEY in env"
             )
         
         # Gemini model configuration
@@ -73,6 +80,7 @@ class LangchainService:
             )
             return llm
         except Exception as e:
+            print(f"Debug - Error initializing Gemini: {str(e)}")
             raise
 
     def _initialize_openai(self):
@@ -269,70 +277,3 @@ Summary:"""
                 "provider": self.model_provider.value
             }
 
-    def get_provider_info(self) -> Dict[str, any]:
-        """
-        Get information about the current provider and model
-        
-        Returns:
-            Dict: Provider and model information
-        """
-        return {
-            "provider": self.model_provider.value,
-            "model": self.model_name,
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature
-        }
-
-    def switch_provider(self, new_provider: Union[ModelProvider, str]):
-        """
-        Switch to a different model provider
-        
-        Args:
-            new_provider: New provider to switch to
-        """
-        # Handle string input
-        if isinstance(new_provider, str):
-            try:
-                new_provider = ModelProvider(new_provider.lower())
-            except ValueError:
-                raise ValueError(f"Invalid model provider: {new_provider}. Use 'gemini' or 'openai'")
-        
-        if new_provider != self.model_provider:
-            self.model_provider = new_provider
-            self.llm = self._initialize_llm()
-        
-
-# Convenience functions
-def create_gemini_service() -> LangchainService:
-    """Create a LangChain service with Gemini provider"""
-    return LangchainService(ModelProvider.GEMINI)
-
-def create_openai_service() -> LangchainService:
-    """Create a LangChain service with OpenAI provider"""
-    return LangchainService(ModelProvider.OPENAI)
-
-def summarize_email_simple(subject: str, sender: str, body: str, 
-                          provider: str = "gemini") -> str:
-    """
-    Simple function to get email summary as string
-    
-    Args:
-        subject: Email subject
-        sender: Email sender  
-        body: Email body
-        provider: Model provider ("gemini" or "openai")
-        
-    Returns:
-        str: Email summary or error message
-    """
-    try:
-        service = LangchainService(provider)
-        result = service.summarize_email(subject, sender, body)
-        
-        if result["success"]:
-            return result["summary"]
-        else:
-            return f"Error: {result['error']}"
-            
-    except Exception as e:
-        return f"Error initializing service: {str(e)}"

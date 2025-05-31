@@ -1,13 +1,13 @@
 from app.models.email import EmailData
 from app.services.murfai_service import MurfAIService
-from app.services.openai_service import OpenAIService
+from app.services.langchain_service import LangchainService
 from fastapi import HTTPException
 from typing import Dict, Any
 
 class EmailSummarizerController:
     def __init__(self):
         self.murf_service = MurfAIService()
-        self.openai_service = OpenAIService()
+        self.langchain_service = LangchainService()
 
     async def summarize_email(self, email_data: EmailData) -> Dict[str, Any]:
         """
@@ -24,7 +24,7 @@ class EmailSummarizerController:
         """
         try:
             # Create a summary text from the email data
-            summary_text = self.openai_service.summarize_email(
+            summary_text = self.langchain_service.summarize_email(
                 email_data.subject, 
                 email_data.sender,
                 email_data.body

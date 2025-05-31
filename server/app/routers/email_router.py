@@ -3,7 +3,7 @@ from app.controllers.email_summarizer_controller import EmailSummarizerControlle
 from app.models.email import EmailData
 from typing import Dict, Any
 from pydantic import BaseModel
-from models.email_summary import EmailSummaryData
+from app.models.email_summary import EmailSummaryData
 
 email_summariser_router = APIRouter()
 email_controller = EmailSummarizerController()

@@ -1,6 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import router
+from app.router import router
+import os
+from app.utils.logging import logger
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(
     title="Email Reader AI",
@@ -20,10 +26,10 @@ app.add_middleware(
 # Register routes
 app.include_router(router, prefix="/api/v1")
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to Email Reader AI API"}
-
-@app.get("/health")
+# Health check endpoint
+@app.get("/health", tags=["Health Check"])
 async def health_check():
-    return {"status": "healthy"}
+    """
+    Health check endpoint to verify the API is running
+    """
+    return {"status": "ok", "message": "API is running"}
