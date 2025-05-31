@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Email Reader AI",
+  "name": "AudioMail by Murf AI",
   "version": "1.0.0",
   "description": "Generate audio summaries of your emails with AI",
   "permissions": [
