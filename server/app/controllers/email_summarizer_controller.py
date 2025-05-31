@@ -3,6 +3,7 @@ from app.services.murfai_service import MurfAIService
 from app.services.langchain_service import LangchainService
 from fastapi import HTTPException
 from typing import Dict, Any
+from app.utils.logging import logger
 
 class EmailSummarizerController:
     def __init__(self):
@@ -17,18 +18,26 @@ class EmailSummarizerController:
             email_data (EmailData): The email data containing subject, sender, and body
             
         Returns:
-            Dict[str, Any]: A dictionary containing the summary and audio file
+            Dict[str, Any]: A dictionary containing the summary and audio file URL
             
         Raises:
-            HTTPException: If there's an error in summarization or text-to-speech conversion
+            HTTPException: If there's an error in processing the email
         """
         try:
+
+            # Add Logging
+            logger.info(f"Subject - {email_data.subject}")
+            logger.info(f"Sender - {email_data.sender}")
+            logger.info(f"Body - {email_data.body}")
+
             # Create a summary text from the email data
-            summary_text = self.langchain_service.summarize_email(
+            summary_text: str = self.langchain_service.summarize_email(
                 email_data.subject, 
                 email_data.sender,
                 email_data.body
             )
+
+            logger.info(f"Summary Text - {summary_text}")
             
             if not summary_text:
                 raise HTTPException(
@@ -37,7 +46,7 @@ class EmailSummarizerController:
                 )
             
             # Convert the summary to speech
-            audio_file = await self.murf_service.text_to_speech(summary_text)
+            audio_file = await self.murf_service.text_to_speech(text=summary_text)
             
             if not audio_file:
                 raise HTTPException(
@@ -46,15 +55,15 @@ class EmailSummarizerController:
                 )
             
             return {
-                "status": "success",
-                "data": {
-                    "summary": summary_text,
-                    "audio_file": audio_file
-                }
+                "summary": summary_text,
+                "summary_audio_link": audio_file
             }
             
+        except HTTPException as he:
+            logger.error(f"HTTP error in summarize_email: {str(he)}")
+            raise he
         except Exception as e:
-            # Log the error here if you have a logging system
+            logger.error(f"Unexpected error in summarize_email: {str(e)}")
             raise HTTPException(
                 status_code=500,
                 detail=f"An error occurred while processing the email: {str(e)}"

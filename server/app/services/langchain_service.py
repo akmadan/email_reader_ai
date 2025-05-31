@@ -185,7 +185,7 @@ Summary:"""
         
         return email_data
 
-    def summarize_email(self, subject: str, sender: str, body: str) -> Dict[str, any]:
+    def summarize_email(self, subject: str, sender: str, body: str) -> str:
         """
         Generate a summary of an email using the configured LLM provider
         
@@ -241,16 +241,10 @@ Summary:"""
             summary = response.content.strip()
             
             if not summary:
-                return {
-                    "success": False,
-                    "error": "Empty response received from the model"
-                }
-            return {
-                "success": True,
-                "summary": summary,
-                "provider": self.model_provider.value,
-                "model": self.model_name
-            }
+                return "Empty response received from the model"
+                
+            return summary
+                
             
         except Exception as e:
             error_message = str(e)            
@@ -271,9 +265,6 @@ Summary:"""
                 elif "rate_limit" in error_message.lower():
                     error_message = "Gemini API rate limit exceeded. Please try again later."
             
-            return {
-                "success": False,
-                "error": error_message,
-                "provider": self.model_provider.value
-            }
+            return error_message
+               
 
