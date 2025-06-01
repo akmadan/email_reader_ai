@@ -34,7 +34,7 @@ Imagine having your inbox read to you in natural-sounding audio with concise AI 
 
 ## Setting the Goal
 
-Our goal is to create a Chrome extension that seamlessly integrates with the user’s Gmail inbox, reads the opened email, summarizes it, and provides a playable audio file. The experience should be fast and simple. Here is a short clip demonstrating what needs to be built: [![Watch the video](https://www.youtube.com/watch?v=W9M1kPgfCs0)
+Our goal is to create a Chrome extension that seamlessly integrates with the user’s Gmail inbox, reads the opened email, summarizes it, and provides a playable audio file. The experience should be fast and simple. Here is a short clip demonstrating what needs to be built: [Watch the video](https://www.youtube.com/watch?v=W9M1kPgfCs0)
 
 
 [![Watch the video](https://img.youtube.com/vi/W9M1kPgfCs0/maxresdefault.jpg)](https://www.youtube.com/watch?v=W9M1kPgfCs0)
