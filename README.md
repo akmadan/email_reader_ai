@@ -36,7 +36,7 @@ Imagine having your inbox read to you in natural-sounding audio with concise AI 
 
 Our goal is to create a Chrome extension that seamlessly integrates with the user’s Gmail inbox, reads the opened email, summarizes it, and provides a playable audio file. The experience should be fast and simple. Here is a short clip demonstrating what needs to be built:
 
-![](assets/extension1.gif)
+![extension1.gif](assets/extension1.gif)
 
 ## **Technology Stack**
 
