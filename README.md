@@ -8,28 +8,27 @@ Imagine having your inbox read to you in natural-sounding audio with concise AI 
 
 ## Table of Contents
 
-1. Introduction
-2. [Technology Stack](#tech-stack)
-3. Backend Setup
+1. [Technology Stack](#technology-stack)
+2. Backend Setup
     - [Prerequisites](#prerequisites)
-    - [Setting Up the Project Structure](#project-structure)
-    - [Environment Configuration](#env-config)
-    - [Dependency Management](#dependencies)
+    - [Setting Up the Project Structure](#step-1-setting-up-the-project-structure)
+    - [Environment Configuration](#step-2-environment-configuration)
+    - [Dependency Management](#step-3-dependency-management)
     - Core Application Components
-        - [Data Models](#data-models)
-        - [Configuration Management](#config-management)
-        - [AI Services Layer](#ai-services)
-        - [Business Logic Controller](#business-logic)
-        - [API Routes](#api-routes)
-        - [Main Application](#main-app)
-4. [Docker Deployment](#docker)
-5. [Testing the API](#testing)
-6. Frontend Development
-    - [Project Structure](#project-structure-fe)
-    - [Manifest Configuration](#manifest)
-    - [Background Script](#background)
+        - [Data Models](#41-data-models-appmodelseamilpy)
+        - [Configuration Management](#42-configuration-management-appconfigsettingspy)
+        - [AI Services Layer](#43-ai-services-layer)
+        - [Business Logic Controller](#44-business-logic-controller-appcontrollersemail_summarizer_controllerpy)
+        - [API Routes](#45-api-routes-approutersemail_routerpy)
+        - [Main Application](#46-main-application-appmainpy)
+3. [Docker Deployment](#step-5-docker-deployment)
+4. [Testing the API](#step-6-testing-the-api)
+5. Frontend Development
+    - [Project Structure](#project-structure)
+    - [Manifest Configuration](#manifest-configuration)
+    - [Background Script](#background-script)
     - [Content Scripts](#content-scripts)
-    - [Popup Interface](#popup)
+    - [Popup Interface](#popup-interface)
 
 ## Technology Stack
 
@@ -37,15 +36,8 @@ Here's a clear breakdown of the technology stack:
 
 | **Component** | **Technologies** |
 | --- | --- |
-| Frontend | HTML
-CSS
-JavaScript (Vanilla)
-Manifest 3 (Chrome Extension) |
-| Backend | FastAPI (Python)
-Langchain
-GPT 4o / Gemini Flash 2.0
-Murf AI (Text to Speech)
-Docker |
+| Frontend | HTML, CSS, JavaScript (Vanilla), Manifest 3 (Chrome Extension) |
+| Backend | FastAPI (Python), Langchain, GPT 4o / Gemini Flash 2.0, Murf AI (Text to Speech), Docker |
 
 ## Backend Setup
 
@@ -53,37 +45,49 @@ This section guides you through building a FastAPI server that processes emails 
 
 ### **Prerequisites**
 
+Before you begin, ensure you have the following:
+
 - Python 3.8+
-- OpenAI / Gemini API key
-- Murf AI API key
+- API Keys and Accounts:
+  - [OpenAI API Key](https://platform.openai.com/signup) - For GPT-4 access
+  - [Google AI Studio](https://makersuite.google.com/app/apikey) - For Gemini API access
+  - [Murf AI Account](https://murf.ai/signup) - For text-to-speech conversion
+- [Langchain Documentation](https://python.langchain.com/docs/get_started/introduction) - For understanding the LLM framework
 - Docker (optional, for containerised deployment)
 
 ### **Step 1: Setting Up the Project Structure**
 
-```
+Before we start coding, we need to organize our project in a way that follows clean architecture principles. This structure will help us:
+- Separate concerns (backend logic, API routes, services, etc.)
+- Make the code more maintainable and testable
+- Follow industry best practices for FastAPI applications
+- Make it easier to add new features in the future
+
+Our project will be organized into the following main components:
+- `app/`: Core application code
+  - `routers/`: API endpoint definitions
+  - `models/`: Data models and validation
+  - `services/`: Business logic and external integrations
+  - `controllers/`: Mediates between routes and services
+  - `config/`: Application configuration
+  - `utils/`: Helper functions
+- `tests/`: Unit and integration tests
+- Root files: Dockerfile, requirements.txt, etc.
+
+Now, let's create this structure:
+
+```bash
 mkdir email_reader_ai
 cd email_reader_ai
 mkdir -p server/app/{routers,utils,services,models,controllers,config}
 mkdir -p server/tests
 ```
 
-This structure follows **clean architecture principles**:
-
-- **`app/`**: Core application code
-    - **`routers/`**: API endpoint definitions
-    - **`models/`**: Data models and validation
-    - **`services/`**: Business logic and external integrations
-    - **`controllers/`**: Mediates between routes and services
-    - **`config/`**: Application configuration
-    - **`utils/`**: Helper functions
-- **`tests/`**: Unit and integration tests
-- Root files: Dockerfile, requirements.txt, etc.
-
-**Why this structure?** It promotes separation of concerns, making the code easier to maintain, test, and scale.
+This structure promotes separation of concerns, making the code easier to maintain, test, and scale.
 
 ### **Step 2: Environment Configuration**
 
-We use **`.env`** file to manage configuration:
+We use **`.env`** file to manage configuration:
 
 ```
 # API Keys
@@ -99,13 +103,13 @@ DEBUG=False
 
 **Best Practices:**
 
-- Never commit **`.env`** to version control
-- Use **`.env.example`** to document required variables
+- Never commit **`.env`** to version control
+- Use **`.env.example`** to document required variables
 - Load environment variables at application startup
 
 ### **Step 3: Dependency Management**
 
-Our **`requirements.txt`** specifies all Python dependencies:
+Our **`requirements.txt`** specifies all Python dependencies:
 
 ```
 # FastAPI and server
@@ -131,9 +135,26 @@ pydantic==2.6.1
 
 ### **Step 4: Core Application Components**
 
-### **4.1 Data Models (`app/models/email.py`)**
+### **4.1 Data Models**
 
-```
+Data models are crucial for our application as they define the structure and validation rules for our data. In our email reader application, we need to handle email data in a structured way. Let's look at the key data model:
+
+#### EmailData Model
+The `EmailData` model is the core data structure that represents an email in our system. It serves several important purposes:
+- Validates incoming email data
+- Ensures required fields are present
+- Sanitizes input data
+- Provides type safety through Pydantic
+
+This model is used throughout our application:
+- In API endpoints to validate incoming requests
+- In services to process email content
+- In controllers to pass data between layers
+- For consistent data structure across the application
+
+Here's the implementation:
+
+```python
 from pydantic import BaseModel, Field, validator
 
 class EmailData(BaseModel):
@@ -154,121 +175,352 @@ class EmailData(BaseModel):
         return v
 ```
 
-**Why Pydantic?**
+Let's break down the key components of this model:
 
-- Automatic data validation
-- Type hints for better IDE support
-- Clean error messages for API consumers
-- Serialisation/deserialisation
+1. **Field Definitions:**
+   - `subject`: Email subject line (required, non-empty)
+   - `sender`: Email sender address (required, non-empty)
+   - `body`: Email content (required, non-empty)
 
-### **4.2 Configuration Management (`app/config/settings.py`)**
+2. **Validators:**
+   - `remove_whitespace`: Ensures no leading/trailing whitespace
+   - `validate_body_length`: Ensures email body has meaningful content
 
-```
-from pydantic_settings import BaseSettings
-from functools import lru_cache
+3. **Validation Rules:**
+   - All fields are required (using `...`)
+   - Minimum length of 1 character for all fields
+   - Body must be at least 10 characters long
 
-class Settings(BaseSettings):
-    openai_api_key: str
-    murf_api_key: str
-    port: int = 8000
+### **4.2 AI Services Layer**
 
-    class Config:
-        env_file = ".env"
+The AI Services Layer is responsible for handling all AI-related operations in our application. This includes:
+- Email summarization using LLMs
+- Text-to-speech conversion
+- Integration with external AI services
 
-@lru_cache()
-def get_settings():
-    return Settings()
-```
+#### Langchain Service
 
-**Key Features:**
+The Langchain service is responsible for handling interactions with different LLM providers (Gemini and OpenAI). Here's a breakdown of its key components:
 
-- Type-safe settings from environment variables
-- **`@lru_cache`** prevents repeated file reads
-- Centralized configuration management
+1. **Model Provider Setup**
+First, we set up the necessary imports and define our model provider options. This includes importing required libraries and creating an enum to manage different LLM providers (Gemini and OpenAI) in a type-safe way.
 
-### **4.3 AI Services Layer**
-
-### **LangChain Service (`app/services/langchain_service.py`)**
-
-```
+```python
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
+import os
+from app.models.email import EmailData
+from typing import Dict, Union
 from enum import Enum
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class ModelProvider(Enum):
     GEMINI = "gemini"
     OPENAI = "openai"
+```
 
+2. **Service Initialization**
+The service initialization sets up the core configuration and prepares the LLM for use. It handles provider selection, sets default parameters for token limits and temperature, and initializes the appropriate LLM based on the chosen provider.
+
+```python
 class LangchainService:
-    def __init__(self, provider: ModelProvider = ModelProvider.GEMINI):
-        self.llm = self._init_llm(provider)
-
-    def _init_llm(self, provider):
-        if provider == ModelProvider.GEMINI:
-            return ChatGoogleGenerativeAI(
-                model="gemini-pro",
-                temperature=0.3
-            )
-        # ... other providers
-
-    def summarize_email(self, email_data):
-        prompt = self._create_prompt(email_data)
-        return self.llm.invoke(prompt)
+    def __init__(self, model_provider: Union[ModelProvider, str] = ModelProvider.GEMINI):
+        # Handle string input
+        if isinstance(model_provider, str):
+            try:
+                model_provider = ModelProvider(model_provider.lower())
+            except ValueError:
+                raise ValueError(f"Invalid model provider: {model_provider}. Use 'gemini' or 'openai'")
+        
+        self.model_provider = model_provider
+        
+        # Common configuration
+        self.max_tokens = 500  # Reasonable summary length
+        self.temperature = 0.3  # Lower temperature for consistent summaries
+        
+        # Initialize LLM based on provider
+        self.llm = self._initialize_llm()
 ```
 
-**Design Decisions:**
+3. **LLM Initialization**
+This section handles the initialization of specific LLM providers. It includes separate methods for Gemini and OpenAI, each with their own configuration and API key management. The code ensures proper error handling and validation of API keys.
 
-- Support multiple LLM providers via strategy pattern
-- Configurable parameters (temperature, model version)
-- Clean separation between prompt engineering and execution
+```python
+    def _initialize_llm(self):
+        if self.model_provider == ModelProvider.GEMINI:
+            return self._initialize_gemini()
+        elif self.model_provider == ModelProvider.OPENAI:
+            return self._initialize_openai()
+        else:
+            raise ValueError(f"Unsupported model provider: {self.model_provider}")
 
-### **MurfAI Service (`app/services/murfai_service.py`)**
+    def _initialize_gemini(self):
+        gemini_api_key = os.getenv('GEMINI_API_KEY')
+        if not gemini_api_key:
+            raise ValueError("Gemini API key is required. Set GEMINI_API_KEY in env")
+        
+        self.model_name = "gemini-2.0-flash-001"
+        
+        return ChatGoogleGenerativeAI(
+            model=self.model_name,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            google_api_key=gemini_api_key,
+            top_p=0.8,
+            top_k=40,
+        )
 
-```
-from murf import Murf
-
-class MurfAIService:
-    def __init__(self):
-        self.client = Murf(api_key=os.getenv('MURF_API_KEY'))
-
-    async def text_to_speech(self, text):
-        return await self.client.generate(
-            text=text,
-            voice_id="en-US-natalie",
-            format="MP3"
+    def _initialize_openai(self):
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if not openai_api_key:
+            raise ValueError("OpenAI API key is required. Set OPENAI_API_KEY environment variable.")
+        
+        self.model_name = "gpt-4o"
+        
+        return ChatOpenAI(
+            model=self.model_name,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+            openai_api_key=openai_api_key,
         )
 ```
 
-**Audio Generation:**
+4. **Email Processing and Summarization**
+This is the core functionality of the service. It handles the email summarization process, including prompt creation, validation, and error handling. The code ensures proper formatting of the email content and manages the interaction with the LLM.
 
-- Async support for non-blocking operations
-- Configurable voice parameters
-- Error handling for API failures
+```python
+    def create_summary_prompt(self, email_data: EmailData) -> str:
+        prompt = f"""Please provide a concise summary of this email. Focus on the main purpose, key information, and any required actions.
 
-### **4.4 Business Logic Controller (`app/controllers/email_summarizer_controller.py`)**
+Subject: {email_data.subject}
+Sender: {email_data.sender}
+Email Body: {email_data.body}
 
+Please summarize this email in 2-3 clear sentences that capture:
+1. The main purpose or reason for the email
+2. Key information or important details
+3. Any actions required or deadlines mentioned
+
+Summary:"""
+        return prompt
+
+    def summarize_email(self, subject: str, sender: str, body: str) -> str:
+        try:
+            email_data = EmailData(subject=subject, sender=sender, body=body)
+            
+            # Validate and process email
+            validation = self._validate_email_data(email_data)
+            if not validation["valid"]:
+                if "suggestion" in validation:
+                    return {
+                        "success": True,
+                        "summary": validation["suggestion"],
+                        "provider": self.model_provider.value,
+                        "model": "short_email_handler"
+                    }
+                return {
+                    "success": False,
+                    "error": validation["error"]
+                }
+            
+            # Handle long content and create summary
+            email_data = self._handle_long_content(email_data)
+            prompt = self.create_summary_prompt(email_data)
+            
+            messages = [
+                ("system", "You are a helpful email summarization assistant. Provide clear, concise summaries that capture the essential information and any required actions."),
+                ("human", prompt),
+            ]
+            
+            response = self.llm.invoke(messages)
+            return response.content.strip()
+            
+        except Exception as e:
+            return self._handle_provider_errors(str(e))
 ```
+
+#### MurfAI Service
+
+The MurfAI service handles text-to-speech conversion using the Murf AI API. Here's how it works:
+
+1. **Service Initialization**
+The initialization process sets up the MurfAI client with proper API key management. It supports both direct API key injection and environment variable usage, with appropriate error handling for missing credentials.
+
+```python
+from murf import Murf
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class MurfAIService:
+    def __init__(self, api_key: str = None):
+        self.api_key = api_key or os.getenv('MURF_API_KEY')
+        if not self.api_key:
+            raise ValueError("MURF_API_KEY is required. Set it in environment variables or pass it to the constructor.")
+        
+        self.client = Murf(api_key=self.api_key)
+        self.default_voice = "en-US-natalie"
+```
+
+2. **Text-to-Speech Conversion**
+This is the core functionality that converts text to speech. It handles voice selection, input validation, and audio generation with high-quality settings. The method includes comprehensive error handling and ensures the output meets our quality standards.
+
+```python
+    async def text_to_speech(self, text: str, voice_id: str = None) -> str:
+        try:
+            voice = voice_id or self.default_voice
+            
+            # Ensure text is a string
+            if not isinstance(text, str):
+                text = str(text)
+            
+            response = self.client.text_to_speech.generate(
+                text=text,
+                voice_id=voice,
+                format="MP3",
+                channel_type="STEREO",
+                sample_rate=44100
+            )
+            
+            if not response or not response.audio_file:
+                raise Exception("No audio file generated")
+                
+            return response.audio_file
+            
+        except Exception as e:
+            raise Exception(f"Error in text-to-speech conversion: {str(e)}")
+```
+
+**Key Features of the Service:**
+
+1. **Voice Configuration:**
+   - Configurable voice selection
+   - Default voice fallback
+   - Support for multiple voice options
+
+2. **Audio Quality:**
+   - High-quality MP3 format
+   - Stereo channel output
+   - 44.1kHz sample rate for optimal quality
+
+3. **Error Handling:**
+   - API key validation
+   - Input type checking
+   - Response validation
+   - Detailed error messages
+
+4. **Flexibility:**
+   - Environment variable support
+   - Direct API key injection
+   - Custom voice selection
+   - Async operation support
+
+### **4.3 Business Logic Controller**
+
+The EmailSummarizerController is the central component that orchestrates the interaction between our AI services. It manages the flow of data and ensures proper error handling throughout the email processing pipeline.
+
+1. **Controller Setup and Dependencies**
+The initialization process sets up the necessary services and establishes the foundation for email processing. It creates instances of both the MurfAI and Langchain services, which will be used for text-to-speech conversion and email summarization respectively.
+
+```python
+from app.models.email import EmailData
+from app.services.murfai_service import MurfAIService
+from app.services.langchain_service import LangchainService
+from fastapi import HTTPException
+from typing import Dict, Any
+from app.utils.logging import logger
+
 class EmailSummarizerController:
     def __init__(self):
-        self.ai_service = LangchainService()
-        self.tts_service = MurfAIService()
-
-    async def process_email(self, email_data):
-        summary = self.ai_service.summarize_email(email_data)
-        audio = await self.tts_service.text_to_speech(summary)
-        return {
-            "summary": summary,
-            "audio": audio
-        }
+        self.murf_service = MurfAIService()
+        self.langchain_service = LangchainService()
 ```
 
-**Controller Responsibilities:**
+2. **Email Processing Logic**
+This is the core functionality that processes emails through our AI pipeline. It handles the complete flow from email data to final audio output, including:
+- Logging for monitoring and debugging
+- Email summarization using Langchain
+- Text-to-speech conversion using MurfAI
+- Comprehensive error handling
+- Response formatting
 
-- Orchestrates service interactions
-- Handles business logic flow
-- Manages error cases
-- Transforms data between layers
+```python
+    async def summarize_email(self, email_data: EmailData) -> Dict[str, Any]:
+        try:
+            # Log incoming email data
+            logger.info(f"Subject - {email_data.subject}")
+            logger.info(f"Sender - {email_data.sender}")
+            logger.info(f"Body - {email_data.body}")
 
-### **4.5 API Routes (`app/routers/email_router.py`)**
+            # Generate summary using Langchain
+            summary_text: str = self.langchain_service.summarize_email(
+                email_data.subject, 
+                email_data.sender,
+                email_data.body
+            )
+
+            logger.info(f"Summary Text - {summary_text}")
+            
+            # Validate summary generation
+            if not summary_text:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to generate email summary"
+                )
+            
+            # Convert summary to speech using MurfAI
+            audio_file = await self.murf_service.text_to_speech(text=summary_text)
+            
+            # Validate audio generation
+            if not audio_file:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to generate audio file"
+                )
+            
+            return {
+                "summary": summary_text,
+                "summary_audio_link": audio_file
+            }
+            
+        except HTTPException as he:
+            logger.error(f"HTTP error in summarize_email: {str(he)}")
+            raise he
+        except Exception as e:
+            logger.error(f"Unexpected error in summarize_email: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"An error occurred while processing the email: {str(e)}"
+            )
+```
+
+**Key Features of the Controller:**
+
+1. **Service Orchestration:**
+   - Coordinates between Langchain and MurfAI services
+   - Manages the complete email processing pipeline
+   - Handles service dependencies efficiently
+
+2. **Error Handling:**
+   - Comprehensive error handling for both services
+   - Proper HTTP status codes for different scenarios
+   - Detailed error logging for debugging
+
+3. **Logging:**
+   - Detailed logging at each processing step
+   - Captures important information for monitoring
+   - Helps in debugging and tracking issues
+
+4. **Response Structure:**
+   - Returns both summary text and audio file URL
+   - Consistent response format
+   - Clear error messages for API consumers
+
+### **4.4 API Routes (`app/routers/email_router.py`)**
 
 ```
 router = APIRouter()
@@ -286,7 +538,7 @@ async def summarize_email(email: EmailData):
 - Proper response models
 - Comprehensive error handling
 
-### **4.6 Main Application (`app/main.py`)**
+### **4.5 Main Application (`app/main.py`)**
 
 ```
 app = FastAPI(title="Email Reader AI")
@@ -313,22 +565,106 @@ def health_check():
 
 ### **Step 5: Docker Deployment**
 
-```
+Docker allows us to containerize our application, making it easy to deploy and run consistently across different environments. Let's go through the complete Docker setup process:
+
+1. **Dockerfile Creation**
+First, we create a Dockerfile that defines how to build our application container. This file specifies the base image, dependencies, and runtime configuration.
+
+```dockerfile
+# Use Python 3.11 slim image as base
 FROM python:3.11-slim
+
+# Set working directory
 WORKDIR /app
+
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application
 COPY . .
+
+# Expose the port the app runs on
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0"]
+
+# Command to run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-**Docker Benefits:**
+2. **Building the Docker Image**
+To build the Docker image, run the following command in your project directory:
+```bash
+# Build the image
+docker build -t email-reader-ai:latest .
 
-- Consistent runtime environment
-- Easy deployment to cloud platforms
-- Reproducible builds
-- Scalability
+# Verify the image was created
+docker images | grep email-reader-ai
+```
+
+3. **Running the Container**
+Once the image is built, you can run the container:
+```bash
+# Run the container
+docker run -d \
+  --name email-reader-ai \
+  -p 8000:8000 \
+  --env-file .env \
+  email-reader-ai:latest
+```
+
+4. **Environment Variables**
+Create a `.env` file in your project directory with your API keys and configuration:
+```env
+OPENAI_API_KEY=your_openai_api_key
+GEMINI_API_KEY=your_gemini_api_key
+MURF_API_KEY=your_murf_api_key
+PORT=8000
+HOST=0.0.0.0
+DEBUG=False
+```
+
+5. **Useful Docker Commands**
+Here are some helpful commands for managing your container:
+```bash
+# View running containers
+docker ps
+
+# View container logs
+docker logs email-reader-ai
+
+# Stop the container
+docker stop email-reader-ai
+
+# Remove the container
+docker rm email-reader-ai
+
+# Remove the image
+docker rmi email-reader-ai:latest
+```
+
+**Key Benefits of Docker Deployment:**
+
+1. **Consistency:**
+   - Same environment across development and production
+   - No "works on my machine" problems
+   - Reproducible builds
+
+2. **Isolation:**
+   - Application runs in its own container
+   - No conflicts with host system
+   - Secure environment
+
+3. **Scalability:**
+   - Easy to scale horizontally
+   - Simple load balancing
+   - Quick deployment of new versions
+
+4. **Maintenance:**
+   - Easy updates and rollbacks
+   - Simple monitoring and logging
+   - Centralized configuration
 
 ### **Step 6: Testing the API**
 
@@ -355,7 +691,7 @@ Expected response:
 ```
 {
   "summary": "The email provides a weekly update...",
-  "audio": "https://murf.ai/audio/12345.mp3"
+  "summary_audio_link": "https://murf.ai/audio/12345.mp3"
 }
 ```
 
@@ -371,7 +707,6 @@ First, let's create the project structure:
 mkdir email-reader-extension
 cd email-reader-extension
 mkdir -p assets background content popup
-
 ```
 
 The structure will look like this:
@@ -393,12 +728,18 @@ email-reader-extension/
 │   ├── popup.js
 │   └── popup.css
 └── manifest.json
-
 ```
 
-### Manifest Configuration
+### Component Explanations
 
-Create `manifest.json`:
+#### 1. Manifest Configuration (`manifest.json`)
+The manifest file is the heart of any Chrome extension. It defines:
+- Extension metadata (name, version, description)
+- Required permissions
+- Content scripts and their injection rules
+- Background scripts
+- Popup interface
+- Icons and assets
 
 ```json
 {
@@ -442,14 +783,16 @@ Create `manifest.json`:
     "128": "assets/icon128.png"
   }
 }
-
 ```
 
-### Background Script
+#### 2. Background Script (`background/background.js`)
+The background script runs in the extension's background context and handles:
+- Extension installation and updates
+- Server health checks
+- Communication between popup and content scripts
+- Long-running tasks
 
-Create `background/background.js`:
-
-```jsx
+```javascript
 // Background script for Email Reader AI extension
 chrome.runtime.onInstalled.addListener(() => {
     console.log('Email Reader AI extension installed');
@@ -470,14 +813,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true; // Required for async sendResponse
     }
 });
-
 ```
 
-### Content Scripts
+#### 3. Content Scripts
+Content scripts interact directly with Gmail's webpage to:
+- Extract email content
+- Inject custom UI elements
+- Handle user interactions within Gmail
 
 **Content JavaScript (`content/content.js`)**
-
-```jsx
+```javascript
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getEmailContent') {
@@ -495,8 +840,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Function to extract email content from Gmail
 function extractEmailContent() {
-    console.log('Starting email extraction...');
-
     // Get the email subject
     const subject = document.querySelector('h2.hP')?.textContent ||
                    document.querySelector('div[data-thread-title]')?.textContent ||
@@ -514,48 +857,15 @@ function extractEmailContent() {
 
     const body = bodyElement ? bodyElement.textContent.trim() : '';
 
-    // If we're in the inbox view, try to get the preview
-    if (!body && document.querySelector('.bog')) {
-        const preview = document.querySelector('.bog').textContent.trim();
-        return {
-            subject: subject || 'No subject',
-            sender: sender || 'Unknown sender',
-            body: preview || 'No content available'
-        };
-    }
-
-    // Validate that we have at least some content
-    if (!subject && !body) {
-        throw new Error('Could not find email content. Please make sure you are viewing an email.');
-    }
-
     return {
         subject: subject || 'No subject',
         sender: sender || 'Unknown sender',
         body: body || 'No content available'
     };
 }
-
-// Set up observer for dynamic content
-if (!window.emailReaderObserver) {
-    window.emailReaderObserver = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.addedNodes.length) {
-                console.log('Gmail content updated');
-            }
-        });
-    });
-
-    window.emailReaderObserver.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-}
-
 ```
 
 **Content CSS (`content/content.css`)**
-
 ```css
 /* Custom styles for Gmail integration */
 .email-reader-ai-button {
@@ -578,13 +888,12 @@ if (!window.emailReaderObserver) {
     background-color: #9F7AEA;
     cursor: not-allowed;
 }
-
 ```
 
-### Popup Interface
+#### 4. Popup Interface
+The popup provides the user interface for interacting with the extension.
 
-**5.1 Popup HTML (`popup/popup.html`)**
-
+**Popup HTML (`popup/popup.html`)**
 ```html
 <!DOCTYPE html>
 <html lang="en">
@@ -626,12 +935,10 @@ if (!window.emailReaderObserver) {
     <script src="popup.js"></script>
 </body>
 </html>
-
 ```
 
-**5.2 Popup JavaScript (`popup/popup.js`)**
-
-```jsx
+**Popup JavaScript (`popup/popup.js`)**
+```javascript
 document.addEventListener('DOMContentLoaded', function() {
     const summarizeBtn = document.getElementById('summarizeBtn');
     const statusContainer = document.querySelector('.status-container');
@@ -659,73 +966,6 @@ document.addEventListener('DOMContentLoaded', function() {
         summaryContainer.classList.remove('hidden');
     }
 
-    // Function to check if server is running
-    async function checkServerStatus() {
-        try {
-            const response = await fetch('<http://localhost:8000/health>');
-            return response.ok;
-        } catch (error) {
-            return false;
-        }
-    }
-
-    // Function to get current email content
-    async function getCurrentEmail() {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-        if (!tab.url.includes('mail.google.com')) {
-            throw new Error('Please open Gmail to use this extension');
-        }
-
-        try {
-            const response = await chrome.tabs.sendMessage(tab.id, { action: 'getEmailContent' });
-
-            if (response.error) {
-                throw new Error(response.error);
-            }
-
-            return response;
-        } catch (error) {
-            console.error('Error getting email content:', error);
-            if (error.message.includes('Receiving end does not exist')) {
-                throw new Error('Please refresh the Gmail page and try again');
-            }
-            throw error;
-        }
-    }
-
-    // Function to summarize email
-    async function summarizeEmail(emailData) {
-        try {
-            const isServerRunning = await checkServerStatus();
-            if (!isServerRunning) {
-                throw new Error('Server is not running. Please start the FastAPI server.');
-            }
-
-            const response = await fetch('<http://localhost:8000/api/v1/summarize>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(emailData)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.detail || 'Failed to summarize email');
-            }
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            console.error('Error summarizing email:', error);
-            if (error.message.includes('Failed to fetch')) {
-                throw new Error('Could not connect to server. Please make sure the FastAPI server is running.');
-            }
-            throw error;
-        }
-    }
-
     // Event listener for summarize button
     summarizeBtn.addEventListener('click', async () => {
         try {
@@ -746,11 +986,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-
 ```
 
-**5.3 Popup CSS (`popup/popup.css`)**
-
+**Popup CSS (`popup/popup.css`)**
 ```css
 :root {
     --primary-color: #6B46C1;
@@ -908,40 +1146,30 @@ audio {
 .hidden {
     display: none;
 }
-
 ```
 
-### Loading the Extension in Chrome
+### Key Features of Each Component:
 
-1. Open Chrome and go to `chrome://extensions/`
-2. Enable "Developer mode" in the top right
-3. Click "Load unpacked" and select your extension directory
+1. **Manifest Configuration:**
+   - Defines extension permissions and capabilities
+   - Specifies content script injection rules
+   - Manages extension assets and icons
+   - Configures background service worker
 
-### Testing the Extension
+2. **Background Script:**
+   - Handles extension lifecycle events
+   - Manages server communication
+   - Coordinates between different parts of the extension
+   - Performs health checks
 
-1. Open Gmail in Chrome
-2. Click the extension icon in the toolbar
-3. Click "Summarize Email" on any open email
-4. Wait for the summary and audio to be generated
+3. **Content Scripts:**
+   - Extracts email content from Gmail
+   - Injects custom UI elements
+   - Handles DOM manipulation
+   - Manages user interactions within Gmail
 
-### Best Practices and Tips
-
-1. **Error Handling**:
-    - Always check for server availability
-    - Handle network errors gracefully
-    - Provide clear error messages to users
-2. **Performance**:
-    - Use efficient DOM selectors
-    - Implement proper cleanup in observers
-    - Cache DOM queries when possible
-3. **Security**:
-    - Validate all user input
-    - Use HTTPS for API calls
-    - Implement proper CORS policies
-4. **User Experience**:
-    - Show loading states
-    - Provide clear feedback
-    - Handle edge cases gracefully
-
-
-This tutorial provides a solid foundation for building a Chrome extension that integrates with Gmail and provides AI-powered email summarization. The code is modular, well-structured, and follows best practices for Chrome extension development.
+4. **Popup Interface:**
+   - Provides user-friendly interface
+   - Shows processing status
+   - Displays summaries and audio controls
+   - Handles user interactions
